@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CA Foundation – Study Tracker 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg2: #111;
+  --bg3: #1a1a1a;
+  --border: #222;
+  --text: #f0f0f0;
+  --muted: #666;
+  --accent: #f5c518;
+  --accent2: #e8a000;
+  --card-bg: #0f0f0f;
+  --pill-bg: #1c1c1c;
+  --pill-border: #2e2e2e;
+  --mistake-color: #ff44bb;
+  --status-prod-bg: #0a2a0a; --status-prod-border: #1a5c1a; --status-prod-text: #4ddd4d;
+  --status-ok-bg: #1a1a2e; --status-ok-border: #2a2a6e; --status-ok-text: #7a7aff;
+  --status-avg-bg: #2a1a00; --status-avg-border: #6e4400; --status-avg-text: #ffaa33;
+  --graph-bar: #f5c518;
+  --streak-color: #f5c518;
+}
+.theme-gold {
+  --bg: #0d0900; --bg2: #140f00; --bg3: #1e1600;
+  --border: #2e2200; --text: #fff8e7; --muted: #8a6a20;
+  --accent: #ffd700; --accent2: #ffaa00;
+  --card-bg: #100c00; --pill-bg: #1e1600; --pill-border: #332200;
+  --mistake-color: #ff6b35;
+  --graph-bar: #ffd700; --streak-color: #ffd700;
+}
+.theme-minimal {
+  --bg: #f5f5f0; --bg2: #efefea; --bg3: #e8e8e3;
+  --border: #d0d0c8; --text: #111; --muted: #888;
+  --accent: #111; --accent2: #333;
+  --card-bg: #fff; --pill-bg: #f0f0ea; --pill-border: #d8d8d0;
+  --mistake-color: #cc2255;
+  --status-prod-bg: #e8f5e8; --status-prod-border: #a0d0a0; --status-prod-text: #1a6e1a;
+  --status-ok-bg: #e8e8f8; --status-ok-border: #a0a0d8; --status-ok-text: #2a2a8e;
+  --status-avg-bg: #fff0d8; --status-avg-border: #d8a040; --status-avg-text: #8a4e00;
+  --graph-bar: #333; --streak-color: #111;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; }
+
+/* NAV */
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
+.nav-title { font-size: 13px; color: var(--accent); letter-spacing: 0.1em; font-weight: 600; }
+.nav-tabs { display: flex; gap: 4px; }
+.tab-btn { background: none; border: 0.5px solid transparent; border-radius: 6px; color: var(--muted); font-size: 12px; padding: 5px 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.tab-btn.active, .tab-btn:hover { border-color: var(--border); color: var(--text); background: var(--bg3); }
+.tab-btn.active { color: var(--accent); border-color: var(--accent); }
+.theme-btns { display: flex; gap: 6px; align-items: center; }
+.theme-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: border-color 0.15s; }
+.theme-dot.dark { background: #222; border-color: #555; }
+.theme-dot.gold { background: #ffd700; }
+.theme-dot.minimal { background: #e8e8e3; border-color: #aaa; }
+.theme-dot.active { border-color: var(--accent) !important; }
+
+/* TABS */
+.tab-content { display: none; padding: 24px; max-width: 960px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+/* STATS BAR */
+.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+.stat-val { font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* STREAK */
+.streak-bar { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; }
+.streak-fire { font-size: 28px; line-height: 1; }
+.streak-info { flex: 1; }
+.streak-num { font-size: 22px; font-weight: 700; color: var(--streak-color); }
+.streak-label { font-size: 12px; color: var(--muted); }
+.streak-dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.streak-dot { width: 10px; height: 10px; border-radius: 2px; background: var(--bg3); border: 0.5px solid var(--border); }
+.streak-dot.done { background: var(--accent); border-color: var(--accent); }
+.streak-dot.today { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+/* GRAPH */
+.graph-section { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; }
+.graph-title { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+.graph-bars { display: flex; align-items: flex-end; gap: 5px; height: 80px; }
+.graph-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.graph-bar { width: 100%; background: var(--graph-bar); border-radius: 3px 3px 0 0; min-height: 3px; transition: height 0.3s; opacity: 0.85; }
+.graph-bar-label { font-size: 9px; color: var(--muted); white-space: nowrap; }
+.graph-bar-val { font-size: 9px; color: var(--accent); }
+
+/* LOG FORM */
+.log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.form-col { display: flex; flex-direction: column; gap: 14px; }
+label { font-size: 10px; color: var(--muted); display: block; margin-bottom: 5px; letter-spacing: 0.1em; text-transform: uppercase; }
+input, textarea, select {
+  width: 100%; background: var(--bg3); border: 0.5px solid var(--border);
+  border-radius: 6px; color: var(--text); font-size: 14px;
+  font-family: inherit; padding: 9px 12px; outline: none; transition: border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 60px; }
+select option { background: var(--bg3); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* CARD PREVIEW */
+.preview-col { position: sticky; top: 80px; align-self: start; }
+.card {
+  font-family: 'Courier New', monospace;
+  background: var(--card-bg); border-radius: 14px; padding: 26px 22px;
+  color: var(--text); position: relative; overflow: hidden;
+  border: 0.5px solid var(--border);
+}
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.card-brand { font-size: 9px; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 2px; font-family: 'Segoe UI', Arial, sans-serif; }
+.card-daynum { font-size: 38px; font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 16px; }
+.card-section { margin-bottom: 12px; }
+.card-label { font-size: 8px; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 5px; font-family: 'Segoe UI', Arial, sans-serif; }
+.card-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.pill { font-size: 11px; background: var(--pill-bg); border: 0.5px solid var(--pill-border); border-radius: 4px; padding: 3px 9px; color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; }
+.card-time { font-size: 28px; font-weight: 700; color: var(--text); }
+.card-time span { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 4px; }
+.card-text { font-size: 11px; color: var(--text); line-height: 1.65; font-family: 'Segoe UI', Arial, sans-serif; opacity: 0.85; }
+.card-mistake { font-size: 11px; color: var(--mistake-color); line-height: 1.65; font-family: 'Segoe UI', Arial, sans-serif; }
+.divider { border: none; border-top: 0.5px solid var(--border); margin: 10px 0; }
+.card-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 12px; border-radius: 20px; margin-top: 6px; font-family: 'Segoe UI', Arial, sans-serif; }
+.status-prod { background: var(--status-prod-bg); border: 0.5px solid var(--status-prod-border); color: var(--status-prod-text); }
+.status-ok { background: var(--status-ok-bg); border: 0.5px solid var(--status-ok-border); color: var(--status-ok-text); }
+.status-avg { background: var(--status-avg-bg); border: 0.5px solid var(--status-avg-border); color: var(--status-avg-text); }
+.card-streak-badge { position: absolute; top: 16px; right: 16px; font-size: 9px; color: var(--accent); letter-spacing: 0.1em; font-family: 'Segoe UI', Arial, sans-serif; border: 0.5px solid var(--border); border-radius: 4px; padding: 2px 7px; background: var(--bg3); }
+.card-total-hours { position: absolute; bottom: 16px; right: 16px; font-size: 9px; color: var(--muted); font-family: 'Segoe UI', Arial, sans-serif; }
+
+/* BUTTONS */
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+.btn { flex: 1; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; border: 1px solid var(--border); background: var(--bg3); color: var(--text); }
+.btn:hover { background: var(--bg2); }
+.btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { opacity: 0.9; }
+.btn.outline { background: transparent; color: var(--accent); border-color: var(--accent); }
+.btn.outline:hover { background: var(--bg3); }
+
+/* HISTORY TAB */
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color 0.15s; }
+.history-item:hover { border-color: var(--accent); }
+.hist-day { font-size: 22px; font-weight: 700; color: var(--accent); min-width: 60px; font-family: 'Courier New', monospace; }
+.hist-info { flex: 1; }
+.hist-subjects { font-size: 13px; color: var(--text); margin-bottom: 3px; }
+.hist-meta { font-size: 11px; color: var(--muted); }
+.hist-hours { font-size: 16px; font-weight: 600; color: var(--text); text-align: right; }
+.hist-hours span { font-size: 10px; color: var(--muted); display: block; }
+.hist-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; }
+.hist-del:hover { color: #ff4444; background: #2a0000; }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 14px; }
+
+/* EXPORT OPTIONS */
+.export-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.export-btn { padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-family: inherit; border: 0.5px solid var(--border); background: var(--bg3); color: var(--text); transition: all 0.15s; }
+.export-btn:hover { border-color: var(--accent); color: var(--accent); }
+.export-label { font-size: 10px; color: var(--muted); text-align: center; margin-top: 8px; letter-spacing: 0.06em; }
+
+/* REEL CARD (9:16 hidden offscreen for export) */
+#reelCard {
+  position: fixed; left: -9999px; top: 0;
+  width: 405px; height: 720px;
+  background: var(--card-bg); font-family: 'Courier New', monospace;
+  color: var(--text); padding: 48px 36px; display: flex; flex-direction: column;
+  border: none;
+}
+#reelCard::before { display: none; }
+.reel-top-bar { height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; margin-bottom: 32px; }
+.reel-brand { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); font-family: 'Segoe UI', Arial, sans-serif; margin-bottom: 4px; }
+.reel-day { font-size: 64px; font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 28px; }
+.reel-section { margin-bottom: 18px; }
+.reel-label { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); margin-bottom: 7px; font-family: 'Segoe UI', Arial, sans-serif; }
+.reel-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.reel-pill { font-size: 12px; background: var(--pill-bg); border: 0.5px solid var(--pill-border); border-radius: 4px; padding: 4px 12px; color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; }
+.reel-divider { border: none; border-top: 0.5px solid var(--border); margin: 18px 0; }
+.reel-time { font-size: 42px; font-weight: 700; color: var(--text); }
+.reel-time span { font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 6px; }
+.reel-text { font-size: 13px; color: var(--text); line-height: 1.7; font-family: 'Segoe UI', Arial, sans-serif; opacity: 0.85; }
+.reel-mistake { font-size: 13px; color: var(--mistake-color); line-height: 1.7; font-family: 'Segoe UI', Arial, sans-serif; }
+.reel-status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; padding: 6px 16px; border-radius: 20px; margin-top: 10px; font-family: 'Segoe UI', Arial, sans-serif; }
+.reel-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
+.reel-streak { font-size: 11px; color: var(--accent); letter-spacing: 0.1em; font-family: 'Segoe UI', Arial, sans-serif; }
+.reel-total { font-size: 11px; color: var(--muted); font-family: 'Segoe UI', Arial, sans-serif; text-align: right; }
+
+@media (max-width: 620px) {
+  .log-grid { grid-template-columns: 1fr; }
+  .preview-col { position: static; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .export-options { grid-template-columns: 1fr; }
+  .nav-tabs { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-title">CA FOUNDATION 2026</div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="showTab('log')">Log Today</button>
+    <button class="tab-btn" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" onclick="showTab('history')">History</button>
+  </div>
+  <div class="theme-btns">
+    <div class="theme-dot dark active" title="Dark" onclick="setTheme('dark', this)"></div>
+    <div class="theme-dot gold" title="Gold" onclick="setTheme('gold', this)"></div>
+    <div class="theme-dot minimal" title="Minimal" onclick="setTheme('minimal', this)"></div>
+  </div>
+</nav>
+
+<!-- LOG TAB -->
+<div class="tab-content active" id="tab-log">
+  <div class="log-grid">
+    <div class="form-col">
+      <div>
+        <label>Day number (auto-detected)</label>
+        <input type="number" id="dayNum" value="1" min="1" max="365">
+      </div>
+      <div class="row2">
+        <div><label>Subject 1</label><input type="text" id="sub1" placeholder="Accounts"></div>
+        <div><label>Subject 2</label><input type="text" id="sub2" placeholder="Law"></div>
+      </div>
+      <div class="row2">
+        <div><label>Subject 3</label><input type="text" id="sub3" placeholder="Economics"></div>
+        <div><label>Subject 4</label><input type="text" id="sub4" placeholder="Maths"></div>
+      </div>
+      <div>
+        <label>Topics covered (one per line)</label>
+        <textarea id="topics" placeholder="Partnership – Basics&#10;Contract Act – Offer"></textarea>
+      </div>
+      <div>
+        <label>Study time (hrs)</label>
+        <input type="number" id="studyTime" placeholder="4.5" step="0.5" min="0" max="24">
+      </div>
+      <div>
+        <label>Key learning</label>
+        <textarea id="keyLearning" placeholder="What did you understand today?"></textarea>
+      </div>
+      <div>
+        <label>Mistake made</label>
+        <textarea id="mistake" placeholder="What did you get wrong?"></textarea>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="status" onchange="toggleCustom()">
+          <option value="productive">✔ Productive</option>
+          <option value="okay">~ Okay</option>
+          <option value="average">~ Average</option>
+          <option value="custom">✏ Custom...</option>
+        </select>
+        <input type="text" id="customMsg" placeholder="Type your status..." style="margin-top:8px; display:none;">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="saveLog()">Save & Generate Card</button>
+      </div>
+      <div class="export-options">
+        <button class="export-btn" onclick="downloadCard('square')">⬇ Square PNG<br><span style="font-size:10px;color:var(--muted)">1080×1080 – Post</span></button>
+        <button class="export-btn" onclick="downloadCard('reel')">⬇ Reel PNG<br><span style="font-size:10px;color:var(--muted)">1080×1920 – Reel</span></button>
+      </div>
+    </div>
+
+    <div class="preview-col">
+      <div class="card" id="cardPreview">
+        <div class="card-streak-badge" id="p-streak-badge">DAY 1 STREAK</div>
+        <div class="card-brand">CA FOUNDATION · 2026</div>
+        <div class="card-daynum" id="p-day">DAY 01</div>
+        <div class="card-section">
+          <div class="card-label">SUBJECTS</div>
+          <div class="card-pills" id="p-subjects"></div>
+        </div>
+        <div class="card-section">
+          <div class="card-label">TOPICS</div>
+          <div class="card-pills" id="p-topics"></div>
+        </div>
+        <hr class="divider">
+        <div class="card-section">
+          <div class="card-label">STUDY TIME</div>
+          <div class="card-time" id="p-time">– <span>hrs</span></div>
+        </div>
+        <div class="card-section">
+          <div class="card-label">KEY LEARNING</div>
+          <div class="card-text" id="p-learning">–</div>
+        </div>
+        <div class="card-section">
+          <div class="card-label">MISTAKE</div>
+          <div class="card-mistake" id="p-mistake">–</div>
+        </div>
+        <div id="p-status" class="card-status status-prod">✔ Productive</div>
+        <div class="card-total-hours" id="p-total-hours"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD TAB -->
+<div class="tab-content" id="tab-dashboard">
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Days</div><div class="stat-val" id="d-days">0</div><div class="stat-sub">logged</div></div>
+    <div class="stat-card"><div class="stat-label">Total Hours</div><div class="stat-val" id="d-hours">0</div><div class="stat-sub">studied</div></div>
+    <div class="stat-card"><div class="stat-label">Current Streak</div><div class="stat-val" id="d-streak">0</div><div class="stat-sub">days in a row</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Hours/Day</div><div class="stat-val" id="d-avg">0</div><div class="stat-sub">per session</div></div>
+  </div>
+
+  <div class="streak-bar">
+    <div class="streak-fire">🔥</div>
+    <div class="streak-info">
+      <div class="streak-num" id="sb-streak">0 day streak</div>
+      <div class="streak-label">Keep going — consistency beats intensity</div>
+    </div>
+    <div class="streak-dots" id="streak-dots"></div>
+  </div>
+
+  <div class="graph-section">
+    <div class="graph-title">STUDY HOURS — LAST 14 DAYS</div>
+    <div class="graph-bars" id="graph-bars"></div>
+  </div>
+
+  <div class="graph-section">
+    <div class="graph-title">DAYS TO EXAM</div>
+    <div style="display:flex; align-items:baseline; gap:10px; margin-top:8px;">
+      <div style="font-size:42px; font-weight:700; color:var(--accent);" id="days-to-exam">–</div>
+      <div style="font-size:13px; color:var(--muted);">days remaining · CA Foundation May 2026</div>
+    </div>
+    <div style="margin-top:12px; background:var(--bg3); border-radius:6px; height:6px; overflow:hidden;">
+      <div id="exam-progress-bar" style="height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:6px; transition:width 0.5s;"></div>
+    </div>
+    <div style="font-size:11px; color:var(--muted); margin-top:6px;" id="exam-progress-label"></div>
+  </div>
+</div>
+
+<!-- HISTORY TAB -->
+<div class="tab-content" id="tab-history">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div style="font-size:12px; color:var(--muted);" id="hist-count">0 sessions logged</div>
+    <button class="btn" style="width:auto; padding:6px 14px; font-size:12px;" onclick="clearAll()">Clear all</button>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
+<!-- REEL CARD (hidden, for export) -->
+<div id="reelCard">
+  <div class="reel-top-bar"></div>
+  <div class="reel-brand">CA FOUNDATION · 2026</div>
+  <div class="reel-day" id="r-day">DAY 01</div>
+  <div class="reel-section">
+    <div class="reel-label">SUBJECTS</div>
+    <div class="reel-pills" id="r-subjects"></div>
+  </div>
+  <div class="reel-section">
+    <div class="reel-label">TOPICS</div>
+    <div class="reel-pills" id="r-topics"></div>
+  </div>
+  <div class="reel-divider"></div>
+  <div class="reel-section">
+    <div class="reel-label">STUDY TIME</div>
+    <div class="reel-time" id="r-time">– <span>hrs</span></div>
+  </div>
+  <div class="reel-section">
+    <div class="reel-label">KEY LEARNING</div>
+    <div class="reel-text" id="r-learning">–</div>
+  </div>
+  <div class="reel-section">
+    <div class="reel-label">MISTAKE</div>
+    <div class="reel-mistake" id="r-mistake">–</div>
+  </div>
+  <div id="r-status" class="reel-status status-prod">✔ Productive</div>
+  <div class="reel-footer">
+    <div class="reel-streak" id="r-streak"></div>
+    <div class="reel-total" id="r-total"></div>
+  </div>
+</div>
+
+<script>
+// ---- STORAGE ----
+function getHistory() { try { return JSON.parse(localStorage.getItem('caLogs') || '[]'); } catch(e) { return []; } }
+function saveHistory(h) { localStorage.setItem('caLogs', JSON.stringify(h)); }
+function getTheme() { return localStorage.getItem('caTheme') || 'dark'; }
+function saveTheme(t) { localStorage.setItem('caTheme', t); }
+
+function pad(n) { return String(parseInt(n)||1).padStart(2,'0'); }
+
+// ---- THEME ----
+function setTheme(name, dotEl) {
+  document.body.className = name === 'dark' ? '' : 'theme-' + name;
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  if (dotEl) dotEl.classList.add('active');
+  saveTheme(name);
+}
+
+// ---- TABS ----
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'history') renderHistory();
+}
+
+// ---- AUTO DAY ----
+function getNextDay() {
+  const h = getHistory();
+  if (!h.length) return 1;
+  return Math.max(...h.map(e => parseInt(e.day) || 0)) + 1;
+}
+
+// ---- STREAK ----
+function calcStreak() {
+  const h = getHistory();
+  if (!h.length) return 0;
+  const dates = [...new Set(h.map(e => e.date))].sort().reverse();
+  let streak = 0;
+  const today = new Date().toISOString().slice(0,10);
+  let check = today;
+  for (let d of dates) {
+    if (d === check) { streak++; const dt = new Date(check); dt.setDate(dt.getDate()-1); check = dt.toISOString().slice(0,10); }
+    else if (d < check) break;
+  }
+  return streak;
+}
+
+// ---- UPDATE CARD PREVIEW ----
+function updateCard() {
+  const dayNum = document.getElementById('dayNum').value || '1';
+  const subs = ['sub1','sub2','sub3','sub4'].map(id => document.getElementById(id).value.trim()).filter(Boolean);
+  const topics = document.getElementById('topics').value.trim().split('\n').filter(t => t.trim());
+  const time = document.getElementById('studyTime').value.trim() || '–';
+  const learning = document.getElementById('keyLearning').value.trim() || '–';
+  const mistake = document.getElementById('mistake').value.trim() || '–';
+  const status = document.getElementById('status').value;
+  const customMsg = document.getElementById('customMsg').value.trim();
+
+  const streak = calcStreak();
+  const h = getHistory();
+  const totalHrs = h.reduce((s, e) => s + (parseFloat(e.hours)||0), 0);
+
+  document.getElementById('p-day').textContent = 'DAY ' + pad(dayNum);
+  document.getElementById('r-day').textContent = 'DAY ' + pad(dayNum);
+  document.getElementById('p-streak-badge').textContent = streak + ' DAY STREAK';
+
+  const subContainer = document.getElementById('p-subjects');
+  subContainer.innerHTML = '';
+  const rSubContainer = document.getElementById('r-subjects');
+  rSubContainer.innerHTML = '';
+  subs.forEach(s => {
+    ['p-subjects','r-subjects'].forEach((id, i) => {
+      const el = document.createElement('span');
+      el.className = i === 0 ? 'pill' : 'reel-pill';
+      el.textContent = s;
+      document.getElementById(id).appendChild(el);
+    });
+  });
+
+  const topicContainer = document.getElementById('p-topics');
+  topicContainer.innerHTML = '';
+  const rTopicContainer = document.getElementById('r-topics');
+  rTopicContainer.innerHTML = '';
+  topics.forEach(t => {
+    ['p-topics','r-topics'].forEach((id, i) => {
+      const el = document.createElement('span');
+      el.className = i === 0 ? 'pill' : 'reel-pill';
+      el.textContent = t.trim();
+      document.getElementById(id).appendChild(el);
+    });
+  });
+
+  document.getElementById('p-time').innerHTML = time + ' <span>hrs</span>';
+  document.getElementById('r-time').innerHTML = time + ' <span>hrs</span>';
+  document.getElementById('p-learning').textContent = learning;
+  document.getElementById('r-learning').textContent = learning;
+  document.getElementById('p-mistake').textContent = mistake;
+  document.getElementById('r-mistake').textContent = mistake;
+  document.getElementById('p-total-hours').textContent = 'Total: ' + totalHrs.toFixed(1) + ' hrs studied';
+  document.getElementById('r-streak').textContent = streak + ' DAY STREAK 🔥';
+  document.getElementById('r-total').textContent = 'Total: ' + totalHrs.toFixed(1) + ' hrs';
+
+  let statusText = '', statusClass = '';
+  if (status === 'productive') { statusText = '✔ Productive'; statusClass = 'status-prod'; }
+  else if (status === 'okay') { statusText = '~ Okay'; statusClass = 'status-ok'; }
+  else if (status === 'average') { statusText = '~ Average'; statusClass = 'status-avg'; }
+  else if (status === 'custom') { statusText = customMsg || '...'; statusClass = 'status-ok'; }
+
+  ['p-status','r-status'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = (id === 'p-status' ? 'card-status ' : 'reel-status ') + statusClass;
+    el.textContent = statusText;
+  });
+}
+
+function toggleCustom() {
+  const status = document.getElementById('status').value;
+  document.getElementById('customMsg').style.display = status === 'custom' ? 'block' : 'none';
+  updateCard();
+}
+
+document.querySelectorAll('#tab-log input, #tab-log textarea, #tab-log select').forEach(el => {
+  el.addEventListener('input', updateCard);
+});
+
+// ---- SAVE LOG ----
+function saveLog() {
+  const dayNum = document.getElementById('dayNum').value || '1';
+  const subs = ['sub1','sub2','sub3','sub4'].map(id => document.getElementById(id).value.trim()).filter(Boolean);
+  const topics = document.getElementById('topics').value.trim().split('\n').filter(t => t.trim());
+  const hours = parseFloat(document.getElementById('studyTime').value) || 0;
+  const learning = document.getElementById('keyLearning').value.trim();
+  const mistake = document.getElementById('mistake').value.trim();
+  const status = document.getElementById('status').value;
+  const customMsg = document.getElementById('customMsg').value.trim();
+
+  const entry = {
+    id: Date.now(),
+    day: parseInt(dayNum),
+    date: new Date().toISOString().slice(0,10),
+    subjects: subs,
+    topics: topics,
+    hours: hours,
+    learning: learning,
+    mistake: mistake,
+    status: status,
+    customMsg: customMsg
+  };
+
+  const h = getHistory();
+  h.push(entry);
+  saveHistory(h);
+
+  // auto-advance day
+  document.getElementById('dayNum').value = getNextDay();
+  updateCard();
+  alert('Day ' + pad(dayNum) + ' saved! ✔');
+}
+
+// ---- DOWNLOAD ----
+function downloadCard(type) {
+  updateCard();
+  if (type === 'square') {
+    const card = document.getElementById('cardPreview');
+    html2canvas(card, { backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#0f0f0f', scale: 4, useCORS: true }).then(canvas => {
+      triggerDownload(canvas, 'study-log-day-' + pad(document.getElementById('dayNum').value) + '-square.png');
+    });
+  } else {
+    const reel = document.getElementById('reelCard');
+    reel.style.left = '0';
+    html2canvas(reel, { backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg').trim() || '#0f0f0f', scale: 2.67, useCORS: true, width: 405, height: 720 }).then(canvas => {
+      reel.style.left = '-9999px';
+      triggerDownload(canvas, 'study-log-day-' + pad(document.getElementById('dayNum').value) + '-reel.png');
+    });
+  }
+}
+
+function triggerDownload(canvas, filename) {
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ---- DASHBOARD ----
+function renderDashboard() {
+  const h = getHistory();
+  const totalDays = h.length;
+  const totalHrs = h.reduce((s,e) => s+(parseFloat(e.hours)||0),0);
+  const streak = calcStreak();
+  const avg = totalDays ? (totalHrs/totalDays).toFixed(1) : 0;
+
+  document.getElementById('d-days').textContent = totalDays;
+  document.getElementById('d-hours').textContent = totalHrs.toFixed(1);
+  document.getElementById('d-streak').textContent = streak;
+  document.getElementById('d-avg').textContent = avg;
+  document.getElementById('sb-streak').textContent = streak + ' day streak';
+
+  // streak dots (last 21 days)
+  const dotsEl = document.getElementById('streak-dots');
+  dotsEl.innerHTML = '';
+  const today = new Date();
+  const dates = new Set(h.map(e => e.date));
+  for (let i = 20; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0,10);
+    const dot = document.createElement('div');
+    dot.className = 'streak-dot' + (dates.has(ds) ? (i===0?' today':' done') : '');
+    dotsEl.appendChild(dot);
+  }
+
+  // graph (last 14 days)
+  const graphEl = document.getElementById('graph-bars');
+  graphEl.innerHTML = '';
+  const last14 = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0,10);
+    const dayEntries = h.filter(e => e.date === ds);
+    const hrs = dayEntries.reduce((s,e)=>s+(parseFloat(e.hours)||0),0);
+    last14.push({ label: d.toLocaleDateString('en',{weekday:'short'}).slice(0,2), hrs });
+  }
+  const maxHrs = Math.max(...last14.map(d=>d.hrs), 1);
+  last14.forEach(d => {
+    const wrap = document.createElement('div');
+    wrap.className = 'graph-bar-wrap';
+    const pct = Math.round((d.hrs/maxHrs)*100);
+    wrap.innerHTML = (d.hrs > 0 ? '<div class="graph-bar-val">' + d.hrs.toFixed(1) + '</div>' : '') +
+      '<div class="graph-bar" style="height:' + Math.max(pct, d.hrs>0?8:3) + '%;"></div>' +
+      '<div class="graph-bar-label">' + d.label + '</div>';
+    graphEl.appendChild(wrap);
+  });
+
+  // exam countdown (May 14 2026)
+  const examDate = new Date('2026-05-14');
+  const startDate = new Date('2026-01-01');
+  const now = new Date();
+  const daysLeft = Math.ceil((examDate - now) / 86400000);
+  const totalDuration = Math.ceil((examDate - startDate) / 86400000);
+  const elapsed = Math.ceil((now - startDate) / 86400000);
+  const pct = Math.min(Math.round((elapsed/totalDuration)*100), 100);
+  document.getElementById('days-to-exam').textContent = Math.max(daysLeft, 0);
+  document.getElementById('exam-progress-bar').style.width = pct + '%';
+  document.getElementById('exam-progress-label').textContent = pct + '% of prep time elapsed · Exam: 14, 16, 18, 20 May 2026';
+}
+
+// ---- HISTORY ----
+function renderHistory() {
+  const h = getHistory().slice().reverse();
+  const listEl = document.getElementById('history-list');
+  document.getElementById('hist-count').textContent = h.length + ' sessions logged';
+  if (!h.length) {
+    listEl.innerHTML = '<div class="empty-state">No sessions yet.<br>Start logging from the Log Today tab.</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  h.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <div class="hist-day">D${pad(entry.day)}</div>
+      <div class="hist-info">
+        <div class="hist-subjects">${entry.subjects.join(' · ') || '–'}</div>
+        <div class="hist-meta">${entry.topics.slice(0,2).join(', ') || '–'} · ${entry.date}</div>
+      </div>
+      <div class="hist-hours">${(entry.hours||0).toFixed(1)}<span>hrs</span></div>
+      <button class="hist-del" onclick="deleteEntry(${entry.id}, event)">✕</button>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+function deleteEntry(id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this entry?')) return;
+  const h = getHistory().filter(entry => entry.id !== id);
+  saveHistory(h);
+  renderHistory();
+}
+
+function clearAll() {
+  if (!confirm('Clear ALL history? This cannot be undone.')) return;
+  localStorage.removeItem('caLogs');
+  renderHistory();
+}
+
+// ---- INIT ----
+(function init() {
+  const theme = getTheme();
+  if (theme !== 'dark') {
+    document.body.className = 'theme-' + theme;
+    document.querySelectorAll('.theme-dot').forEach(d => { d.classList.remove('active'); if (d.classList.contains(theme)) d.classList.add('active'); });
+  }
+  document.getElementById('dayNum').value = getNextDay();
+  updateCard();
+})();
+</script>
+</body>
+</html>
